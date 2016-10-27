@@ -1,0 +1,677 @@
+{
+    "kind": "List",
+    "apiVersion": "v1",
+    "metadata": {},
+    "items": [
+        {
+            "kind": "Template",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "jupyter-notebook",
+                "annotations": {
+                    "description": "Jupyter Notebook", 
+                    "tags": "instant-app,jupyter,notebook"
+                }
+            },
+            "parameters": [
+                {
+                    "name": "APPLICATION_NAME",
+                    "description": "The name of the notebook application.",
+                    "value": "notebook",
+                    "from": "[a-zA-Z0-9]",
+                    "required": true
+                },
+                {
+                    "name": "NOTEBOOK_IMAGE",
+                    "description": "The name of the notebook image.",
+                    "value": "s2i-minimal-notebook",
+                    "from": "[a-zA-Z0-9-]",
+                    "required": true
+                },
+                {
+                    "description": "Password for the notebook application.",
+                    "name": "NOTEBOOK_PASSWORD",
+                    "from": "[a-f0-9]{8}",
+                    "generate": "expression"
+                },
+                {
+                    "name": "CLUSTER_NAME",
+                    "description": "The name of the notebook cluster.",
+                    "value": "",
+                    "from": "[a-zA-Z0-9-]"
+                }
+            ],
+            "objects": [
+                {
+                    "kind": "DeploymentConfig",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "${APPLICATION_NAME}",
+                        "labels": {
+                            "group": "jupyter-notebook-${APPLICATION_NAME}"
+                        }
+                    },
+                    "spec": {
+                        "triggers": [
+                            {
+                                "type": "ConfigChange"
+                            },
+                            {
+                                "type": "ImageChange",
+                                "imageChangeParams": {
+                                    "automatic": false,
+                                    "containerNames": [
+                                        "${APPLICATION_NAME}"
+                                    ],
+                                    "from": {
+                                        "kind": "ImageStreamTag",
+                                        "name": "${NOTEBOOK_IMAGE}:latest"
+                                    }
+                                }
+                            }
+                        ],
+                        "replicas": 1,
+                        "selector": {
+                            "deploymentconfig": "${APPLICATION_NAME}"
+                        },
+                        "template": {
+                            "metadata": {
+                                "labels": {
+                                    "group": "jupyter-notebook-${APPLICATION_NAME}",
+                                    "deploymentconfig": "${APPLICATION_NAME}"
+                                }
+                            },
+                            "spec": {
+                                "containers": [
+                                    {
+                                        "name": "${APPLICATION_NAME}",
+                                        "image": "${NOTEBOOK_IMAGE}:latest",
+                                        "ports": [
+                                            {
+                                                "containerPort": 8888,
+                                                "protocol": "TCP"
+                                            }
+                                        ],
+                                        "env": [
+                                            {
+                                                "name": "JUPYTER_NOTEBOOK_PASSWORD",
+                                                "value": "${NOTEBOOK_PASSWORD}"
+                                            },
+                                            {
+                                                "name": "IPYPARALLEL_CONTROLLER_NAME",
+                                                "value": "ipcontroller-${CLUSTER_NAME}"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                {
+                    "kind": "Service",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "${APPLICATION_NAME}",
+                        "labels": {
+                            "group": "jupyter-notebook-${APPLICATION_NAME}"
+                        }
+                    },
+                    "spec": {
+                        "ports": [
+                            {
+                                "name": "8888-tcp",
+                                "protocol": "TCP",
+                                "port": 8888,
+                                "targetPort": 8888
+                            }
+                        ],
+                        "selector": {
+                            "deploymentconfig": "${APPLICATION_NAME}"
+                        }
+                    }
+                },
+                {
+                    "kind": "Route",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "${APPLICATION_NAME}",
+                        "labels": {
+                            "group": "jupyter-notebook-${APPLICATION_NAME}"
+                        }
+                    },
+                    "spec": {
+                        "to": {
+                            "kind": "Service",
+                            "name": "${APPLICATION_NAME}"
+                        },
+                        "port": {
+                            "targetPort": "8888"
+                        },
+                        "tls": {
+                            "termination": "edge"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "kind": "Template",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "jupyter-builder",
+                "annotations": {
+                    "description": "Jupyter Notebook Builder",
+                    "tags": "builder,jupyter,notebook"
+                }
+            },
+            "parameters": [
+                {
+                    "description": "The name of the notebook image.",
+                    "name": "NOTEBOOK_IMAGE",
+                    "from": "[a-aA-Z0-9-]",
+                    "required": true
+                },
+                {
+                    "name": "BUILDER_IMAGE",
+                    "description": "The name of the builder image.",
+                    "value": "s2i-minimal-notebook",
+                    "from": "[a-zA-Z0-9-]",
+                    "required": true
+                },
+                {
+                    "name": "SOURCE_REPOSITORY",
+                    "description": "Git repository for source files.",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "name": "SOURCE_DIRECTORY",
+                    "description": "Sub-directory of Git repository.",
+                    "value": "",
+                    "required": false
+                }
+            ],
+            "objects": [
+                {
+                    "kind": "ImageStream",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "${NOTEBOOK_IMAGE}",
+                        "labels": {
+                            "group": "jupyter-builder-${NOTEBOOK_IMAGE}"
+                        }
+                    }
+                },
+                {
+                    "kind": "BuildConfig",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "${NOTEBOOK_IMAGE}",
+                        "labels": {
+                            "group": "jupyter-builder-${NOTEBOOK_IMAGE}"
+                        }
+                    },
+                    "spec": {
+                        "triggers": [
+                            {
+                                "type": "ConfigChange"
+                            },
+                            {
+                                "type": "ImageChange"
+                            }
+                        ],
+                        "source": {
+                            "type": "Git",
+                            "git": {
+                                "uri": "${SOURCE_REPOSITORY}"
+                           },
+                           "contextDir": "${SOURCE_DIRECTORY}"
+                        },
+                        "strategy": {
+                            "type": "Source",
+                            "sourceStrategy": {
+                                "from": {
+                                    "kind": "ImageStreamTag",
+                                    "name": "${BUILDER_IMAGE}:latest"
+                                }
+                            }
+                        },
+                        "output": {
+                            "to": {
+                                "kind": "ImageStreamTag",
+                                "name": "${NOTEBOOK_IMAGE}:latest"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "kind": "Template",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "jupyter-cluster",
+                "annotations": {
+                    "description": "Jupyter Notebook Cluster",
+                    "tags": "instant-app,jupyter,cluster"
+                }
+            },
+            "parameters": [
+                {
+                    "description": "The name of the notebook cluster.",
+                    "name": "CLUSTER_NAME",
+                    "from": "[a-zA-Z0-9-]",
+                    "required": true
+                },
+                {
+                    "description": "The name of the notebook image.",
+                    "name": "NOTEBOOK_IMAGE",
+                    "value": "s2i-minimal-notebook",
+                    "from": "[a-aA-Z0-9-]",
+                    "required": true
+                }
+            ],
+            "objects": [
+                {
+                    "kind": "DeploymentConfig",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "ipcontroller-${CLUSTER_NAME}",
+                        "labels": {
+                            "group": "jupyter-cluster-${CLUSTER_NAME}"
+                        }
+                    },
+                    "spec": {
+                        "triggers": [
+                            {
+                                "type": "ConfigChange"
+                            },
+                            {
+                                "type": "ImageChange",
+                                "imageChangeParams": {
+                                    "automatic": false,
+                                    "containerNames": [
+                                        "ipcontroller-${CLUSTER_NAME}"
+                                    ],
+                                    "from": {
+                                        "kind": "ImageStreamTag",
+                                        "name": "${NOTEBOOK_IMAGE}:latest"
+                                    }
+                                }
+                            }
+                        ],
+                        "replicas": 1,
+                        "selector": {
+                            "deploymentconfig": "ipcontroller-${CLUSTER_NAME}"
+                        },
+                        "template": {
+                            "metadata": {
+                                "labels": {
+                                    "group": "jupyter-cluster-${CLUSTER_NAME}",
+                                    "deploymentconfig": "ipcontroller-${CLUSTER_NAME}"
+                                }
+                            },
+                            "spec": {
+                                "containers": [
+                                    {
+                                        "name": "ipcontroller-${CLUSTER_NAME}",
+                                        "image": "${NOTEBOOK_IMAGE}:latest",
+                                        "ports": [
+                                            {
+                                                "containerPort": 10000,
+                                                "protocol": "TCP"
+                                            },
+                                            {
+                                                "containerPort": 10001,
+                                                "protocol": "TCP"
+                                            },
+                                            {
+                                                "containerPort": 10002,
+                                                "protocol": "TCP"
+                                            },
+                                            {
+                                                "containerPort": 10003,
+                                                "protocol": "TCP"
+                                            },
+                                            {
+                                                "containerPort": 10004,
+                                                "protocol": "TCP"
+                                            },
+                                            {
+                                                "containerPort": 10005,
+                                                "protocol": "TCP"
+                                            },
+                                            {
+                                                "containerPort": 10006,
+                                                "protocol": "TCP"
+                                            },
+                                            {
+                                                "containerPort": 10007,
+                                                "protocol": "TCP"
+                                            },
+                                            {
+                                                "containerPort": 10008,
+                                                "protocol": "TCP"
+                                            },
+                                            {
+                                                "containerPort": 10009,
+                                                "protocol": "TCP"
+                                            },
+                                            {
+                                                "containerPort": 10010,
+                                                "protocol": "TCP"
+                                            },
+                                            {
+                                                "containerPort": 10011,
+                                                "protocol": "TCP"
+                                            }
+                                        ],
+                                        "env": [
+                                            {
+                                                "name": "IPYPARALLEL_SERVICE_TYPE",
+                                                "value": "controller"
+                                            },
+                                            {
+                                                "name": "IPYPARALLEL_CONTROLLER_NAME",
+                                                "value": "ipcontroller-${CLUSTER_NAME}"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                {
+                    "kind": "DeploymentConfig",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "ipengine-${CLUSTER_NAME}",
+                        "labels": {
+                            "group": "jupyter-cluster-${CLUSTER_NAME}"
+                        }
+                    },
+                    "spec": {
+                        "triggers": [
+                            {
+                                "type": "ConfigChange"
+                            },
+                            {
+                                "type": "ImageChange",
+                                "imageChangeParams": {
+                                    "automatic": false,
+                                    "containerNames": [
+                                        "ipengine-${CLUSTER_NAME}"
+                                    ],
+                                    "from": {
+                                        "kind": "ImageStreamTag",
+                                        "name": "${NOTEBOOK_IMAGE}:latest"
+                                    }
+                                }
+                            }
+                        ],
+                        "replicas": 1,
+                        "selector": {
+                            "deploymentconfig": "ipengine-${CLUSTER_NAME}"
+                        },
+                        "template": {
+                            "metadata": {
+                                "labels": {
+                                    "group": "jupyter-cluster-${CLUSTER_NAME}",
+                                    "deploymentconfig": "ipengine-${CLUSTER_NAME}"
+                                }
+                            },
+                            "spec": {
+                                "containers": [
+                                    {
+                                        "name": "ipengine-${CLUSTER_NAME}",
+                                        "image": "${NOTEBOOK_IMAGE}:latest",
+                                        "ports": [
+                                            {
+                                                "containerPort": 10000,
+                                                "protocol": "TCP"
+                                            },
+                                            {
+                                                "containerPort": 10001,
+                                                "protocol": "TCP"
+                                            },
+                                            {
+                                                "containerPort": 10002,
+                                                "protocol": "TCP"
+                                            },
+                                            {
+                                                "containerPort": 10003,
+                                                "protocol": "TCP"
+                                            },
+                                            {
+                                                "containerPort": 10004,
+                                                "protocol": "TCP"
+                                            },
+                                            {
+                                                "containerPort": 10005,
+                                                "protocol": "TCP"
+                                            },
+                                            {
+                                                "containerPort": 10006,
+                                                "protocol": "TCP"
+                                            },
+                                            {
+                                                "containerPort": 10007,
+                                                "protocol": "TCP"
+                                            },
+                                            {
+                                                "containerPort": 10008,
+                                                "protocol": "TCP"
+                                            },
+                                            {
+                                                "containerPort": 10009,
+                                                "protocol": "TCP"
+                                            },
+                                            {
+                                                "containerPort": 10010,
+                                                "protocol": "TCP"
+                                            },
+                                            {
+                                                "containerPort": 10011,
+                                                "protocol": "TCP"
+                                            }
+                                        ],
+                                        "env": [
+                                            {
+                                                "name": "IPYPARALLEL_SERVICE_TYPE",
+                                                "value": "engine"
+                                            },
+                                            {
+                                                "name": "IPYPARALLEL_CONTROLLER_NAME",
+                                                "value": "ipcontroller-${CLUSTER_NAME}"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                {
+                    "kind": "Service",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "ipcontroller-${CLUSTER_NAME}",
+                        "labels": {
+                            "group": "jupyter-cluster-${CLUSTER_NAME}"
+                        }
+                    },
+                    "spec": {
+                        "ports": [
+                            {
+                                "name": "10000-tcp",
+                                "protocol": "TCP",
+                                "port": 10000,
+                                "targetPort": 10000
+                            },
+                            {
+                                "name": "10001-tcp",
+                                "protocol": "TCP",
+                                "port": 10001,
+                                "targetPort": 10001
+                            },
+                            {
+                                "name": "10002-tcp",
+                                "protocol": "TCP",
+                                "port": 10002,
+                                "targetPort": 10002
+                            },
+                            {
+                                "name": "10003-tcp",
+                                "protocol": "TCP",
+                                "port": 10003,
+                                "targetPort": 10003
+                            },
+                            {
+                                "name": "10004-tcp",
+                                "protocol": "TCP",
+                                "port": 10004,
+                                "targetPort": 10004
+                            },
+                            {
+                                "name": "10005-tcp",
+                                "protocol": "TCP",
+                                "port": 10005,
+                                "targetPort": 10005
+                            },
+                            {
+                                "name": "10006-tcp",
+                                "protocol": "TCP",
+                                "port": 10006,
+                                "targetPort": 10006
+                            },
+                            {
+                                "name": "10007-tcp",
+                                "protocol": "TCP",
+                                "port": 10007,
+                                "targetPort": 10007
+                            },
+                            {
+                                "name": "10008-tcp",
+                                "protocol": "TCP",
+                                "port": 10008,
+                                "targetPort": 10008
+                            },
+                            {
+                                "name": "10009-tcp",
+                                "protocol": "TCP",
+                                "port": 10009,
+                                "targetPort": 10009
+                            },
+                            {
+                                "name": "10010-tcp",
+                                "protocol": "TCP",
+                                "port": 10010,
+                                "targetPort": 10010
+                            },
+                            {
+                                "name": "10011-tcp",
+                                "protocol": "TCP",
+                                "port": 10011,
+                                "targetPort": 10011
+                            }
+                        ],
+                        "selector": {
+                            "deploymentconfig": "ipcontroller-${CLUSTER_NAME}"
+                        }
+                    }
+                },
+                {
+                    "kind": "Service",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "ipengine-${CLUSTER_NAME}",
+                        "labels": {
+                            "group": "jupyter-cluster-${CLUSTER_NAME}"
+                        }
+                    },
+                    "spec": {
+                        "ports": [
+                            {
+                                "name": "10000-tcp",
+                                "protocol": "TCP",
+                                "port": 10000,
+                                "targetPort": 10000
+                            },
+                            {
+                                "name": "10001-tcp",
+                                "protocol": "TCP",
+                                "port": 10001,
+                                "targetPort": 10001
+                            },
+                            {
+                                "name": "10002-tcp",
+                                "protocol": "TCP",
+                                "port": 10002,
+                                "targetPort": 10002
+                            },
+                            {
+                                "name": "10003-tcp",
+                                "protocol": "TCP",
+                                "port": 10003,
+                                "targetPort": 10003
+                            },
+                            {
+                                "name": "10004-tcp",
+                                "protocol": "TCP",
+                                "port": 10004,
+                                "targetPort": 10004
+                            },
+                            {
+                                "name": "10005-tcp",
+                                "protocol": "TCP",
+                                "port": 10005,
+                                "targetPort": 10005
+                            },
+                            {
+                                "name": "10006-tcp",
+                                "protocol": "TCP",
+                                "port": 10006,
+                                "targetPort": 10006
+                            },
+                            {
+                                "name": "10007-tcp",
+                                "protocol": "TCP",
+                                "port": 10007,
+                                "targetPort": 10007
+                            },
+                            {
+                                "name": "10008-tcp",
+                                "protocol": "TCP",
+                                "port": 10008,
+                                "targetPort": 10008
+                            },
+                            {
+                                "name": "10009-tcp",
+                                "protocol": "TCP",
+                                "port": 10009,
+                                "targetPort": 10009
+                            },
+                            {
+                                "name": "10010-tcp",
+                                "protocol": "TCP",
+                                "port": 10010,
+                                "targetPort": 10010
+                            },
+                            {
+                                "name": "10011-tcp",
+                                "protocol": "TCP",
+                                "port": 10011,
+                                "targetPort": 10011
+                            }
+                        ],
+                        "selector": {
+                            "deploymentconfig": "ipengine-${CLUSTER_NAME}"
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}
