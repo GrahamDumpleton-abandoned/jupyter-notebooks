@@ -30,7 +30,7 @@ Do be aware that the Jupyter project base images are very large. The first time 
 
 ## Deploying the Customised Images
 
-The easiest way to deploy these Jupyter notebook images and get working is to import which of the above images you wish to use and then use the OpenShift templates provided with this project to reply them.
+The easiest way to deploy these Jupyter notebook images and get working is to import which of the above images you wish to use and then use the OpenShift templates provided with this project to deploy them.
 
 To import all the above images into your project, you can run the ``oc import-image`` command.
 
@@ -40,7 +40,7 @@ oc import-image getwarped/s2i-scipy-notebook --confirm
 oc import-image getwarped/s2i-tensorflow-notebook --confirm
 ```
 
-This would result in the creation of three image streams within your project.
+This should result in the creation of three image streams within your project.
 
 ```
 s2i-minimal-notebook
@@ -57,7 +57,7 @@ To load the OpenShift templates you can run the ``oc create`` command.
 oc create -f https://raw.githubusercontent.com/getwarped/s2i-jupyter-stacks/master/templates.json
 ```
 
-This should create three templates with your project. The purpose of each template is as follows:
+This should create three templates within your project. The purpose of each template is as follows:
 
 * ``jupyter-notebook`` - Deploy a notebook server from an image stream. This can be one of the standard images listed above, or a customised image which has been created using the ``jupyter-builder`` template. The notebook can optionally be linked to a parallel compute cluster created using ``jupyter-cluster``.
 
@@ -75,7 +75,7 @@ On the page for the ``jupyter-notebook`` template fill in the name of the applic
 
 ![image](images/create_jupyter_notebook.png)
 
-If you do not provide your own password, a random password will be used. You can find out the name of the generated password by going to the _Environment_ tab of the _Deployments_ page for your notebook server.
+If you do not provide your own password, a random password will be used. You can find out the name of the generated password by going to the _Environment_ tab of the _Deployments_ page for your notebook server in the OpenShift web console.
 
 Once created the notebook server will be deployed and automatically exposed via a route to the Internet over a secure HTTP connection. You can find the URL it is exposed as from the _Overview_ page for your project.
 
@@ -83,11 +83,11 @@ Once created the notebook server will be deployed and automatically exposed via 
 
 When you visit the URL you will be prompted for the password you entered via the template to get access to the notebook server.
 
-If you use any of the ``s2i-minimal-notebook``, ``s2i-scipy-notebook`` or ``s2i-tensorflow-notebook`` images in the ``NOTEBOOK_IMAGE`` field of the template, you will be presented with an empty work directory. You create create new notebooks or upload one as necessary.
+If you use any of the ``s2i-minimal-notebook``, ``s2i-scipy-notebook`` or ``s2i-tensorflow-notebook`` images in the ``NOTEBOOK_IMAGE`` field of the template, you will be presented with an empty work directory. You can create new notebooks or upload your own as necessary.
 
 Do note that by default any work you do is not being saved in a persistent volume. Thus if the notebook server is restarted at any point by you explicitly, or by OpenShift, your work will be lost.
 
-To enable you to preserve your work, even if the notebook server is restarted, you should attach a persistent volume to the notebook server. This can be done from the _Deployments_ page for your notebook server.
+To enable you to preserve your work, even if the notebook server is restarted, you should attach a persistent storage volume to the notebook server. This can be done from the _Deployments_ page for your notebook server.
 
 ![image](images/deployments_attach_storage_notebook.png)
 
@@ -96,3 +96,9 @@ The mount path for the storage should be set to be ``/home/jovyan/work``.
 ![image](images/attach_storage_notebook.png)
 
 The storage should be attached before you do anything else. The notebook server will be automatically restarted when you make the storage request.
+
+When done with your work, you can download your files using the Jupyter notebook interface. Alternatively, you can use the ``oc rsync`` command to copy files from your application back to your local computer.
+
+To delete the Jupyter notebook server when no longer required, you can use the ``oc delete all --selector app=<name>`` command, where ``<name>`` is replaced with the value you gave the ``app`` label in the template page when deploying the Jupyter notebook server.
+
+Note that when the application is deleted, the persistent storage volume will not be deleted. To delete that you should determine the name of the persistent storage volume using ``oc get pvc`` and then delete it using ``oc delete pvc/<name>``.
