@@ -144,3 +144,7 @@ Once the cluster is running, you can increase the number of compute engines by i
 To link the cluster with a Jupyter notebook server, specify the name of the cluster when deploying the notebook server using the ``jupyter-notebook`` template.
 
 ![image](images/attach_compute_cluster.png)
+
+The cluster will be associated with the default profile, so the ``ipyparallel`` client can be used without needing any special arguments when it is initialised.
+
+![image](images/ipyparallel_client.png)
