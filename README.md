@@ -1,5 +1,7 @@
 # S2I Enabled Jupyter Notebook Images
 
+*Note: Please don't use these at this time. For unknown reasons Docker build is blowing out the size of the images to ridiculous sizes which make them unusable as the size overwhelms any system. Further investigation is being done to understand why.*
+
 This repository provides templates and documentation for deploying [Source-to-Image](https://github.com/openshift/source-to-image) (S2I) enabled [Jupyter Notebook](http://jupyter.org) images on OpenShift.
 
 ## Comparison to Jupyter Project Images
@@ -16,7 +18,7 @@ The images here have also been S2I enabled to provide an easy way of binding sou
 
 To make use of OpenShift's ability to easily spin up multiple applications and processes, the images have also been extended to add support for doing parallel computing using the ``ipyparallel`` package.
 
-## List of Customised Images Available
+## Customised Images Available
 
 At this point, this project has a focus on providing customised images for working in Python using the Jupyter notebooks. The images which are available are:
 
@@ -28,7 +30,7 @@ Variants of other Jupyter project images including support for other languages a
 
 Do be aware that the Jupyter project base images are very large. The first time you attempt to deploy one, it may take some time as it is downloaded and then pushed out to the node your application is deployed on.
 
-## Deploying the Customised Images
+## Loading Images and Templates
 
 The easiest way to deploy these Jupyter notebook images and get working is to import which of the above images you wish to use and then use the OpenShift templates provided with this project to deploy them.
 
@@ -102,3 +104,43 @@ When done with your work, you can download your files using the Jupyter notebook
 To delete the Jupyter notebook server when no longer required, you can use the ``oc delete all --selector app=<name>`` command, where ``<name>`` is replaced with the value you gave the ``app`` label in the template page when deploying the Jupyter notebook server.
 
 Note that when the application is deleted, the persistent storage volume will not be deleted. To delete that you should determine the name of the persistent storage volume using ``oc get pvc`` and then delete it using ``oc delete pvc/<name>``.
+
+## Creating a Custom Image
+
+The Jupyter project provides base images with different Python packages pre-installed, that the images provided by this project use. The packages pre-installed with each of the images are:
+
+* ``s2i-minimal-notebook`` - No additional packages except for ``ipyparallel`` which is installed as part of the S2I enhanced images.
+* ``s2i-scipy-notebook`` - In addition to what is provided by ``s2i-minial-notebook`` also contains ``pandas``, ``matplotlib``, ``scipy``, ``seaborn``, ``scikit-learn``, ``scikit-image``, ``sympy``, ``cython``, ``patsy``, ``statsmodel``, ``cloudpickle``, ``dill``, ``numba`` and ``bokeh``.
+* ``s2i-tensorflow-notebook`` - In addition to what is provided by ``s2i-tensorflow-notebook`` also contains ``tensorflow``.
+
+You can use these images if they provide everything you need, or you can create a custom image containing any additional Python packages by using these images as an S2I builder to install additional packages. You can also use this mechanism to pre-load Python code, data files or notebooks.
+
+The images can be used as a S2I builder from the command line using ``oc new-build``, or you can use the ``jupyter-builder`` template.
+
+Selecting ``jupyter-builder`` from the _Add to Project_ page you will be asked to enter in the name to give the custom notebook image created, the name of the S2I builder image above to use as the base, and the details of a source code repository from which files will be pulled to incorporate into the custom image. To have additional Python packages installed into the custom image, you should add a ``requirements.txt`` for ``pip`` into the directory of the source code repository that files are pulled from.
+
+![image](images/create_jupyter_builder.png)
+
+This template will only create a build and it will not appear on the _Overview_ page. You will be able to find it under the _Builds_ page. 
+
+When the build is complete, you can then use the ``jupyter-notebook`` template to run the image, as described above, by setting ``NOTEBOOK_IMAGE`` to be the name of your custom image.
+
+As when deploying images the first time, due to the large size of the Jupyter project base images, the initial build using a specific base image can be slow due to the time taken to transfer the image to the node where the build is occurring.
+
+## Running a Compute Cluster
+
+Support for running a parallel computing cluster using ``ipyparallel`` has been incorporated into all the S2I enabled images.
+
+To set up your own compute cluster, you can use the ``jupyter-cluster`` template. Give your cluster a name and specify the notebook image to use when starting the controller and compute engines.
+
+![image](images/create_jupyter_cluster.png)
+
+If you need additional Python packages, data files or Python code available in the compute engines, you can build it into a custom image to be used when starting up the cluster using the ``jupyter-builder`` template.
+
+Once the cluster is running, you can increase the number of compute engines by increasing the replica count on the ``ipengine`` component.
+
+![image](images/scale_up_compute_engine.png)
+
+To link the cluster with a Jupyter notebook server, specify the name of the cluster when deploying the notebook server using the ``jupyter-notebook`` template.
+
+![image](images/attach_compute_cluster.png)
