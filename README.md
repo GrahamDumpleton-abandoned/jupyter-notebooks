@@ -52,7 +52,7 @@ oc create -f https://raw.githubusercontent.com/getwarped/jupyter-notebooks/maste
 
 This should create three templates within your project. The purpose of each template is as follows:
 
-* ``jupyter-notebook`` - Deploy a notebook server from an image stream. This can be one of the standard images listed above, or a customised image which has been created using the ``jupyter-builder`` template. The notebook can optionally be linked to a parallel compute cluster created using ``jupyter-cluster``.
+* ``jupyter-notebook`` - Deploy a notebook server from an image stream. This can be one of the basic images listed above, or a customised image which has been created using the ``jupyter-builder`` template. The notebook can optionally be linked to a parallel compute cluster created using ``jupyter-cluster``.
 
 * ``jupyter-builder`` - Create a customised notebook image. This will run the S2I build process, starting with any of the basic images, or even a customised image, to bind additional files into the image. This can be used to incorporate pre-defined notebooks, data files, or install additional Python packages.
 
