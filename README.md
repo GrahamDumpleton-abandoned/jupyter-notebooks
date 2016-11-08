@@ -10,7 +10,17 @@ The images that the Jupyter project provides will not work with the default secu
 
 The issues preventing the Jupyter project images being able to be run in a default installation of OpenShift have been [reported](https://github.com/jupyter/docker-stacks/issues/188) via the GitHub project but at this point have not been addressed.
 
-Trying to fix the issues in the Jupyter project images by creating a derived image that makes changes is not realistic as the nature of the changes results in the image size ballooning out to a point where it isn't practical to use. As a consequence, the Jupyter notebook images used here go back to scratch, providing a basic image and the tools to construct custom images yourself inside of OpenShift using S2I.
+Fixed up versions of the Jupyter project images that can be run on OpenShift can be found in another ``getwarped`` project described at:
+
+* [https://github.com/getwarped/jupyter-stacks](https://github.com/getwarped/jupyter-stacks)
+
+The images based on the Jupyter project images, provide various stacks with a range of different packages pre-installed, including both Python 2 and Python 3 runtimes in some images. Those images do have basic S2I support for when using Python as well, but the primary intention is to make available an OpenShift compatible version of the Jupyter project images for use in ad-hoc situations.
+
+In contrast, the images provided here are setup for only a single Python version and only provide a minimal notebook configuration. The intent is that the images here be used as S2I builders to build up purpose built images which include only those packages that you need. This provides a smaller and more reproducible image as it requires that all the dependencies you need are listed.
+
+The images here also include built-in support for being used as part of a parallel computing cluster using ``ipyparallel``. The Jupyter project images cannot be used in the same way and would need additional work to set them up to be used with ``ipyparallel``.
+
+So if you want an ad-hoc environment to play in, the Jupyter project images may be more suitable, but where you need your environment to be properly specified so you know what is being included, or need to use ``ipyparallel``, the images here would be a better option.
 
 ## Jupyter Notebook Base Image
 
