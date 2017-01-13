@@ -59,7 +59,7 @@
                             {
                                 "type": "ImageChange",
                                 "imageChangeParams": {
-                                    "automatic": false,
+                                    "automatic": true,
                                     "containerNames": [
                                         "${APPLICATION_NAME}"
                                     ],
@@ -290,7 +290,7 @@
                             {
                                 "type": "ImageChange",
                                 "imageChangeParams": {
-                                    "automatic": false,
+                                    "automatic": true,
                                     "containerNames": [
                                         "ipcontroller-${CLUSTER_NAME}"
                                     ],
@@ -400,7 +400,7 @@
                             {
                                 "type": "ImageChange",
                                 "imageChangeParams": {
-                                    "automatic": false,
+                                    "automatic": true,
                                     "containerNames": [
                                         "ipengine-${CLUSTER_NAME}"
                                     ],

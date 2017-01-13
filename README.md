@@ -57,7 +57,7 @@ To load the OpenShift templates you can run the ``oc create`` command.
 
 
 ```
-oc create -f https://raw.githubusercontent.com/getwarped/jupyter-notebooks/master/templates.json
+oc create -f https://raw.githubusercontent.com/getwarped/jupyter-notebooks/master/openshift/templates.json
 ```
 
 This should create three templates within your project. The purpose of each template is as follows:
