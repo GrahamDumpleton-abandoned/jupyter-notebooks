@@ -24,8 +24,7 @@
                 {
                     "name": "NOTEBOOK_IMAGE",
                     "description": "The name of the notebook image.",
-                    "value": "s2i-notebook-python35",
-                    "from": "[a-zA-Z0-9-]",
+                    "value": "jupyter-notebook:3.5",
                     "required": true
                 },
                 {
@@ -65,7 +64,7 @@
                                     ],
                                     "from": {
                                         "kind": "ImageStreamTag",
-                                        "name": "${NOTEBOOK_IMAGE}:latest"
+                                        "name": "${NOTEBOOK_IMAGE}"
                                     }
                                 }
                             }
@@ -85,7 +84,7 @@
                                 "containers": [
                                     {
                                         "name": "${APPLICATION_NAME}",
-                                        "image": "${NOTEBOOK_IMAGE}:latest",
+                                        "image": "${NOTEBOOK_IMAGE}",
                                         "ports": [
                                             {
                                                 "containerPort": 8080,
@@ -175,7 +174,7 @@
                 {
                     "name": "BUILDER_IMAGE",
                     "description": "The name of the builder image.",
-                    "value": "s2i-notebook-python35",
+                    "value": "jupyter-notebook:3.5",
                     "from": "[a-zA-Z0-9-]",
                     "required": true
                 },
@@ -233,7 +232,7 @@
                             "sourceStrategy": {
                                 "from": {
                                     "kind": "ImageStreamTag",
-                                    "name": "${BUILDER_IMAGE}:latest"
+                                    "name": "${BUILDER_IMAGE}"
                                 }
                             }
                         },
@@ -267,7 +266,7 @@
                 {
                     "description": "The name of the notebook image.",
                     "name": "NOTEBOOK_IMAGE",
-                    "value": "s2i-notebook-python35",
+                    "value": "jupyter-notebook:3.5",
                     "from": "[a-aA-Z0-9-]",
                     "required": true
                 }
@@ -296,7 +295,7 @@
                                     ],
                                     "from": {
                                         "kind": "ImageStreamTag",
-                                        "name": "${NOTEBOOK_IMAGE}:latest"
+                                        "name": "${NOTEBOOK_IMAGE}"
                                     }
                                 }
                             }
@@ -316,7 +315,7 @@
                                 "containers": [
                                     {
                                         "name": "ipcontroller-${CLUSTER_NAME}",
-                                        "image": "${NOTEBOOK_IMAGE}:latest",
+                                        "image": "${NOTEBOOK_IMAGE}",
                                         "ports": [
                                             {
                                                 "containerPort": 10000,
@@ -406,7 +405,7 @@
                                     ],
                                     "from": {
                                         "kind": "ImageStreamTag",
-                                        "name": "${NOTEBOOK_IMAGE}:latest"
+                                        "name": "${NOTEBOOK_IMAGE}"
                                     }
                                 }
                             }
@@ -426,7 +425,7 @@
                                 "containers": [
                                     {
                                         "name": "ipengine-${CLUSTER_NAME}",
-                                        "image": "${NOTEBOOK_IMAGE}:latest",
+                                        "image": "${NOTEBOOK_IMAGE}",
                                         "ports": [
                                             {
                                                 "containerPort": 10000,
