@@ -22,6 +22,222 @@
                     "required": true
                 },
                 {
+                    "name": "BUILDER_IMAGE",
+                    "description": "The name of the builder image.",
+                    "value": "jupyter-notebook:3.5",
+                    "from": "[a-zA-Z0-9-]",
+                    "required": true
+                },
+                {
+                    "name": "SOURCE_REPOSITORY",
+                    "description": "Git repository for source files.",
+                    "value": "",
+                    "required": true
+                },
+                {
+                    "name": "SOURCE_DIRECTORY",
+                    "description": "Sub-directory of Git repository.",
+                    "value": "",
+                    "required": false
+                },
+                {
+                    "description": "Password for the notebook application.",
+                    "name": "NOTEBOOK_PASSWORD",
+                    "from": "[a-f0-9]{8}",
+                    "generate": "expression"
+                },
+                {
+                    "name": "CLUSTER_NAME",
+                    "description": "The name of the notebook cluster.",
+                    "value": "",
+                    "from": "[a-zA-Z0-9-]"
+                }
+            ],
+            "objects": [
+                {
+                    "kind": "ImageStream",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "${APPLICATION_NAME}",
+                        "labels": {
+                            "appid": "jupyter-notebook-${APPLICATION_NAME}"
+                        }
+                    }
+                },
+                {
+                    "kind": "BuildConfig",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "${APPLICATION_NAME}",
+                        "labels": {
+                            "appid": "jupyter-notebook-${APPLICATION_NAME}"
+                        }
+                    },
+                    "spec": {
+                        "triggers": [
+                            {
+                                "type": "ConfigChange"
+                            },
+                            {
+                                "type": "ImageChange"
+                            }
+                        ],
+                        "source": {
+                            "type": "Git",
+                            "git": {
+                                "uri": "${SOURCE_REPOSITORY}"
+                           },
+                           "contextDir": "${SOURCE_DIRECTORY}"
+                        },
+                        "strategy": {
+                            "type": "Source",
+                            "sourceStrategy": {
+                                "from": {
+                                    "kind": "ImageStreamTag",
+                                    "name": "${BUILDER_IMAGE}"
+                                }
+                            }
+                        },
+                        "output": {
+                            "to": {
+                                "kind": "ImageStreamTag",
+                                "name": "${APPLICATION_NAME}:latest"
+                            }
+                        }
+                    }
+                },
+                {
+                    "kind": "DeploymentConfig",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "${APPLICATION_NAME}",
+                        "labels": {
+                            "appid": "jupyter-notebook-${APPLICATION_NAME}"
+                        }
+                    },
+                    "spec": {
+                        "triggers": [
+                            {
+                                "type": "ConfigChange"
+                            },
+                            {
+                                "type": "ImageChange",
+                                "imageChangeParams": {
+                                    "automatic": true,
+                                    "containerNames": [
+                                        "${APPLICATION_NAME}"
+                                    ],
+                                    "from": {
+                                        "kind": "ImageStreamTag",
+                                        "name": "${APPLICATION_NAME}:latest"
+                                    }
+                                }
+                            }
+                        ],
+                        "replicas": 1,
+                        "selector": {
+                            "deploymentconfig": "${APPLICATION_NAME}"
+                        },
+                        "template": {
+                            "metadata": {
+                                "labels": {
+                                    "appid": "jupyter-notebook-${APPLICATION_NAME}",
+                                    "deploymentconfig": "${APPLICATION_NAME}"
+                                }
+                            },
+                            "spec": {
+                                "containers": [
+                                    {
+                                        "name": "${APPLICATION_NAME}",
+                                        "image": "${APPLICATION_NAME}:latest",
+                                        "ports": [
+                                            {
+                                                "containerPort": 8080,
+                                                "protocol": "TCP"
+                                            }
+                                        ],
+                                        "env": [
+                                            {
+                                                "name": "JUPYTER_NOTEBOOK_PASSWORD",
+                                                "value": "${NOTEBOOK_PASSWORD}"
+                                            },
+                                            {
+                                                "name": "IPYPARALLEL_CONTROLLER_NAME",
+                                                "value": "ipcontroller-${CLUSTER_NAME}"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                {
+                    "kind": "Service",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "${APPLICATION_NAME}",
+                        "labels": {
+                            "appid": "jupyter-notebook-${APPLICATION_NAME}"
+                        }
+                    },
+                    "spec": {
+                        "ports": [
+                            {
+                                "name": "8080-tcp",
+                                "protocol": "TCP",
+                                "port": 8080,
+                                "targetPort": 8080
+                            }
+                        ],
+                        "selector": {
+                            "deploymentconfig": "${APPLICATION_NAME}"
+                        }
+                    }
+                },
+                {
+                    "kind": "Route",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "${APPLICATION_NAME}",
+                        "labels": {
+                            "appid": "jupyter-notebook-${APPLICATION_NAME}"
+                        }
+                    },
+                    "spec": {
+                        "to": {
+                            "kind": "Service",
+                            "name": "${APPLICATION_NAME}"
+                        },
+                        "port": {
+                            "targetPort": "8080-tcp"
+                        },
+                        "tls": {
+                            "termination": "edge"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "kind": "Template",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "jupyter-deployer",
+                "annotations": {
+                    "description": "Jupyter Notebook Deployer", 
+                    "tags": "instant-app,jupyter,notebook"
+                }
+            },
+            "parameters": [
+                {
+                    "name": "APPLICATION_NAME",
+                    "description": "The name of the notebook application.",
+                    "value": "notebook",
+                    "from": "[a-zA-Z0-9]",
+                    "required": true
+                },
+                {
                     "name": "NOTEBOOK_IMAGE",
                     "description": "The name of the notebook image.",
                     "value": "jupyter-notebook:3.5",
