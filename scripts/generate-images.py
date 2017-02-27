@@ -25,7 +25,7 @@ image_stream.spec.tags.append(
           'tags': 'builder,python,jupyter',
           'supports':'python',
           'version': '2.7',
-          'sampleRepo': 'https://github.com/jakevdp/PythonDataScienceHandbook.git'
+          'sampleRepo': 'https://github.com/ricardoduarte/python-for-developers.git'
         },
         from_ = resources.v1_ObjectReference(
             kind = 'DockerImage',
@@ -44,11 +44,11 @@ image_stream.spec.tags.append(
           'tags': 'builder,python,jupyter',
           'supports':'python',
           'version': '3.5',
-          'sampleRepo': 'https://github.com/jakevdp/PythonDataScienceHandbook.git'
+          'sampleRepo': 'https://github.com/ricardoduarte/python-for-developers.git'
         },
         from_ = resources.v1_ObjectReference(
             kind = 'DockerImage',
-            name = 'getwarped/s2i-notebook-python27:latest'
+            name = 'getwarped/s2i-notebook-python35:latest'
         )
     )
 )
@@ -62,7 +62,7 @@ image_stream.spec.tags.append(
           'iconClass': 'icon-python',
           'tags': 'builder,python,jupyter',
           'supports':'python',
-          'sampleRepo': 'https://github.com/jakevdp/PythonDataScienceHandbook.git'
+          'sampleRepo': 'https://github.com/ricardoduarte/python-for-developers.git'
         },
         from_ = resources.v1_ObjectReference(
             kind = 'ImageStreamTag',
