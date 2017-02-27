@@ -24,7 +24,7 @@
                 {
                     "name": "NOTEBOOK_IMAGE",
                     "description": "The name of the notebook image.",
-                    "value": "s2i-notebook-python27",
+                    "value": "s2i-notebook-python35",
                     "from": "[a-zA-Z0-9-]",
                     "required": true
                 },
@@ -175,7 +175,7 @@
                 {
                     "name": "BUILDER_IMAGE",
                     "description": "The name of the builder image.",
-                    "value": "s2i-notebook-python27",
+                    "value": "s2i-notebook-python35",
                     "from": "[a-zA-Z0-9-]",
                     "required": true
                 },
@@ -267,7 +267,7 @@
                 {
                     "description": "The name of the notebook image.",
                     "name": "NOTEBOOK_IMAGE",
-                    "value": "s2i-notebook-python27",
+                    "value": "s2i-notebook-python35",
                     "from": "[a-aA-Z0-9-]",
                     "required": true
                 }
